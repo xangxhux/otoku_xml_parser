@@ -1,0 +1,1 @@
+A Python tool that parses JMdict, KANJIDIC XML and other related files into a normalized PostgreSQL database.
