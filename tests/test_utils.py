@@ -50,3 +50,7 @@ class TestGetText:
     def test_get_texts_skips_empty_elements(self):
         elem = extract_xml("<root><tag>a</tag><tag></tag><tag>c</tag></root>")
         assert get_texts(elem, "tag") == ["a", "c"]
+
+# ============================================================================
+# Tests for iterate_entries
+# ============================================================================

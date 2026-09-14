@@ -4,8 +4,8 @@ These mirror the XML structure and are used to pass data
 between the parser and the database layer.
 """
 
-from dataclasses import dataclass, field
 from typing import Optional
+from dataclasses import dataclass, field
 
 
 @dataclass
