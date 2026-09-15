@@ -24,18 +24,14 @@ def get_texts(element, tag: str) -> list[str]:
     return results
 
 
-def iterate_entries(xml_path: str, parse_entry_fn: Callable) -> Iterator[Entry]:
+def iterate_entries(xml_path: str) -> Iterator[Entry]:
     """
     Stream through the XML file, yielding results parsed using the parse_entry_fn.
 
-    Uses iterparse for memory efficiency — does NOT load the whole
-    file into memory. Clears processed elements as it goes.
+    For memory efficiency, clears processed entries as it goes.
     """
-    if parse_entry_fn is None or not callable(parse_entry_fn):
-        raise ValueError("parse_entry_fn must be provided.")
-
-    #  TODO: Optimize memory usage by clearing elements after processing
-    for event, elem in ET.iterparse(xml_path, events=("end",)):
-        entry = parse_entry_fn(elem)
-        if entry:
-            yield entry
+    for event, elem in ET.iterparse(xml_path, events=["end"]):
+        if elem.tag == "entry":
+            yield elem
+            # Clear the entry data and it's sub-element's data to free memory
+            elem.clear()
