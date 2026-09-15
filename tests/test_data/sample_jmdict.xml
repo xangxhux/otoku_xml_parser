@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--    
-        WARNING! After chaning this file, please update the test files to the changes made here. 
+        WARNING! After changing this file, please update the test files to the changes made here. 
         
         This file is used for testing purposes only and contains fake data and is not intended to be a complete representation of the JMdict file. 
         It is a small sample of the JMdict file, and is used to test the functionality of the code that processes the JMdict file.
@@ -8,8 +8,10 @@
         Extracted from JMdict(date:2026-09-03). 
         
         Used in the following tests:
-                - test_utils > TestIterateEntries.test_iterate_entries_yields_entries        
-                - test_utils > TestIterateEntries.test_iterate_entries_clears_memory        
+                - test_utils > TestIterateEntries.test_entry_contains_expected_children_when_yielded        
+                - test_utils > TestIterateEntries.test_entries_are_cleared_after_yield 
+                - test_utils > TestIterateEntries.test_clear_does_not_affect_next_entry 
+                - test_utils > TestIterateEntries.test_all_entries_cleared_after_full_iteration 
 -->
 <!DOCTYPE JMdict [
         <!ELEMENT JMdict (entry*)>
