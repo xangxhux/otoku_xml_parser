@@ -1,6 +1,9 @@
 # Created by https://gitignore.org
 # Python.gitignore
 
+# Project specific
+docs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
