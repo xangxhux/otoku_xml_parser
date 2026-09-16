@@ -25,10 +25,6 @@ from parser.jmdict_parser import (
     parse_sense,
     parse_entry,
 )
-from parser.helpers import (
-    get_text,
-    get_texts,
-)
 
 # ============================================================================
 # Tests for parse_kanji_element
@@ -49,23 +45,26 @@ class TestParseKanjiElement:
             """
             <k_ele>
                 <keb>走る</keb>
-                <ke_inf>ateji</ke_inf>
-                <ke_inf>ik</ke_inf>
+                <ke_inf>&n;</ke_inf>
+                <ke_inf>&v5r;</ke_inf>
                 <ke_pri>news1</ke_pri>
                 <ke_pri>nf01</ke_pri>
             </k_ele>
-        """
+        """,
+            preserve_entities=True,
         )
         result = parse_kanji_element(elem)
         assert result.keb == "走る"
-        assert result.ke_inf == ["ateji", "ik"]
+        assert result.ke_inf == ["n", "v5r"]
         assert result.ke_pri == ["news1", "nf01"]
 
     def test_handles_missing_keb(self):
-        elem = extract_xml("<k_ele><ke_inf>ateji</ke_inf></k_ele>")
+        elem = extract_xml(
+            "<k_ele><ke_inf>&n;</ke_inf></k_ele>", preserve_entities=True
+        )
         result = parse_kanji_element(elem)
         assert result.keb == ""
-        assert result.ke_inf == ["ateji"]
+        assert result.ke_inf == ["n"]
 
 
 # ============================================================================
@@ -242,7 +241,7 @@ class TestParseLink:
         elem = extract_xml("<xref/>")
         result = parse_link(elem, "xref")
         assert result == None
-    
+
     def test_handles_malformed_link(self):
         # Links that don't conform to the expected format should return None
         elem1 = extract_xml("<xref>走る・奔る</xref>")
@@ -288,42 +287,45 @@ class TestParseSense:
         elem = extract_xml(
             """
             <sense>
-                <pos>v5r</pos>
-                <pos>vi</pos>
+                <pos>&n;</pos>
+                <pos>&v5r;</pos>
                 <gloss>to run</gloss>
             </sense>
-        """
+        """,
+            preserve_entities=True,
         )
         result = parse_sense(elem, 0)
-        assert result.parts_of_speech == ["v5r", "vi"]
+        assert result.parts_of_speech == ["n", "v5r"]
 
     def test_parses_sense_with_fields(self):
         elem = extract_xml(
             """
             <sense>
-                <field>linguistics</field>
-                <field>phonetics</field>
+                <field>&n;</field>
+                <field>&v5r;</field>
                 <gloss>phoneme</gloss>
             </sense>
-        """
+        """,
+            preserve_entities=True,
         )
         result = parse_sense(elem, 0)
-        assert result.fields == ["linguistics", "phonetics"]
+        assert result.fields == ["n", "v5r"]
 
     def test_parses_sense_with_misc_and_dialect(self):
         elem = extract_xml(
             """
             <sense>
-                <misc>abbr</misc>
-                <misc>col</misc>
-                <dial>ksb</dial>
+                <misc>&n;</misc>
+                <misc>&v5r;</misc>
+                <dial>&abbr;</dial>
                 <gloss>abbreviation</gloss>
             </sense>
-        """
+        """,
+            preserve_entities=True,
         )
         result = parse_sense(elem, 0)
-        assert result.misc_tags == ["abbr", "col"]
-        assert result.dialect_tags == ["ksb"]
+        assert result.misc_tags == ["n", "v5r"]
+        assert result.dialect_tags == ["abbr"]
 
     def test_parses_multiple_glosses(self):
         elem = extract_xml(
@@ -496,10 +498,10 @@ class TestParseEntry:
                     <re_pri>news1</re_pri>
                 </r_ele>
                 <sense>
-                    <pos>v5r</pos>
-                    <pos>vi</pos>
-                    <field>computing</field>
-                    <misc>col</misc>
+                    <pos>&n;</pos>
+                    <pos>&v5r;</pos>
+                    <field>&n;</field>
+                    <misc>&n;</misc>
                     <s_inf>as ...（すると／しては）～（から／ので）</s_inf>
                     <gloss>to run</gloss>
                     <gloss>to dash</gloss>
@@ -507,7 +509,8 @@ class TestParseEntry:
                     <xref>駆ける・かける・1</xref>
                 </sense>
             </entry>
-        """
+        """,
+            preserve_entities=True,
         )
         result = parse_entry(elem)
 
@@ -527,9 +530,9 @@ class TestParseEntry:
         # Sense
         assert len(result.senses) == 1
         sense = result.senses[0]
-        assert sense.parts_of_speech == ["v5r", "vi"]
-        assert sense.fields == ["computing"]
-        assert sense.misc_tags == ["col"]
+        assert sense.parts_of_speech == ["n", "v5r"]
+        assert sense.fields == ["n"]
+        assert sense.misc_tags == ["n"]
         assert sense.s_inf == "as ...（すると／しては）～（から／ので）"
         assert len(sense.glosses) == 2
         assert sense.glosses[0].text == "to run"

@@ -17,6 +17,7 @@ from model.jmdict_entity import (
 from parser.helpers import (
     get_text,
     get_texts,
+    get_entity_texts,
     detect_reb,
     detect_keb,
 )
@@ -26,7 +27,7 @@ def parse_kanji_element(k_ele) -> KanjiElement:
     """Parse a <k_ele> element."""
     return KanjiElement(
         keb=get_text(k_ele, "keb"),
-        ke_inf=get_texts(k_ele, "ke_inf"),
+        ke_inf=get_entity_texts(k_ele, "ke_inf"),
         ke_pri=get_texts(k_ele, "ke_pri"),
     )
 
@@ -35,7 +36,7 @@ def parse_reading_element(r_ele) -> ReadingElement:
     """Parse an <r_ele> element."""
     return ReadingElement(
         reb=get_text(r_ele, "reb"),
-        re_inf=get_texts(r_ele, "re_inf"),
+        re_inf=get_entity_texts(r_ele, "re_inf"),
         re_pri=get_texts(r_ele, "re_pri"),
         re_restr=get_texts(r_ele, "re_restr"),
         re_nokanji=r_ele.find("re_nokanji") is not None,
@@ -139,12 +140,13 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
 
 def parse_sense(sense_elem, sense_index: int) -> Sense:
     """Parse a <sense> element with all its children."""
+
     sense = Sense(sense_index=sense_index)
-    sense.parts_of_speech = get_texts(sense_elem, "pos")
-    sense.fields = get_texts(sense_elem, "field")
-    sense.misc_tags = get_texts(sense_elem, "misc")
+    sense.parts_of_speech = get_entity_texts(sense_elem, "pos")
+    sense.fields = get_entity_texts(sense_elem, "field")
+    sense.misc_tags = get_entity_texts(sense_elem, "misc")
     sense.s_inf = get_text(sense_elem, "s_inf")
-    sense.dialect_tags = get_texts(sense_elem, "dial")
+    sense.dialect_tags = get_entity_texts(sense_elem, "dial")
 
     # Glosses
     for gloss_elem in sense_elem.findall("gloss"):

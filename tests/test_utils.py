@@ -3,20 +3,40 @@ Common test helper functions
 
 """
 
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 
 from parser.helpers import (
     get_text,
     get_texts,
+    get_entity_text,
+    get_entity_texts,
     iterate_entries,
     detect_keb,
     detect_reb,
 )
 
+DTD_HEADER = """<!DOCTYPE root [
+<!ENTITY n "noun (common) (futsuumeishi)">
+<!ENTITY v5r "Godan verb with 'ru' ending">
+<!ENTITY sk "search-only kana form">
+<!ENTITY abbr "abbreviation">
+]>
+"""
 
-def extract_xml(xml_string: str):
-    """Parse a raw XML string into an XML element."""
-    return ET.fromstring(xml_string.encode("utf-8"))
+
+def extract_xml(xml_string: str, preserve_entities: bool = False):
+    """
+    Parse an XML string into an xml element.
+
+    When preserve_entities=True, entities remain as child nodes
+    (e.g., <pos>&n;</pos> yields a child node containing '&n;').
+    NOTE:Requires the DTD header so the parser knows the entity names.
+    """
+    if preserve_entities:
+        xml_string = DTD_HEADER + xml_string
+        parser = ET.XMLParser(resolve_entities=False)
+        return ET.fromstring(xml_string, parser=parser)
+    return ET.fromstring(xml_string)
 
 
 # ============================================================================
@@ -53,6 +73,106 @@ class TestGetText:
     def test_get_texts_skips_empty_elements(self):
         elem = extract_xml("<root><tag>a</tag><tag></tag><tag>c</tag></root>")
         assert get_texts(elem, "tag") == ["a", "c"]
+
+
+# ============================================================================
+# Tests for get_entity_text
+# ============================================================================
+
+
+class TestGetEntityText:
+    def test_returns_entity_name_when_child_exists(self):
+        elem = extract_xml("<root><pos>&n;</pos></root>", preserve_entities=True)
+        assert get_entity_text(elem, "pos") == "n"
+
+    def test_returns_default_when_child_missing(self):
+        elem = extract_xml("<root></root>", preserve_entities=True)
+        assert get_entity_text(elem, "pos") == ""
+        assert get_entity_text(elem, "pos", "fallback") == "fallback"
+
+    def test_returns_correct_entity_name(self):
+        str1 = "<root><pos>&v5r;</pos></root>"
+        str2 = "<root><pos>&sk;</pos></root>"
+        res1 = extract_xml(str1, preserve_entities=True)
+        res2 = extract_xml(str2, preserve_entities=True)
+        assert get_entity_text(res1, "pos") == "v5r"
+        assert get_entity_text(res2, "pos") == "sk"
+
+    def test_returns_default_for_empty_element(self):
+        elem = extract_xml("<root><pos></pos></root>", preserve_entities=True)
+        assert get_entity_text(elem, "pos") == ""
+
+    def test_returns_default_for_plain_text_child(self):
+        """
+        If the child has plain text instead of an unresolved entity placeholder reference value,
+        get_entity_text returns the default.
+        """
+        elem = extract_xml("<root><pos>noun</pos></root>", preserve_entities=True)
+        assert get_entity_text(elem, "pos") == ""
+
+    def test_uses_custom_default(self):
+        elem = extract_xml("<root></root>", preserve_entities=True)
+        assert get_entity_text(elem, "pos", "unknown") == "unknown"
+
+    def test_returns_first_match_when_multiple_children(self):
+        elem = extract_xml(
+            "<root><pos>&n;</pos><pos>&v5r;</pos></root>",
+            preserve_entities=True,
+        )
+        assert get_entity_text(elem, "pos") == "n"
+
+
+# ============================================================================
+# Tests for get_entity_texts
+# ============================================================================
+
+
+class TestGetEntityTexts:
+    def test_returns_all_entities(self):
+        elem = extract_xml(
+            "<root><pos>&n;</pos><pos>&v5r;</pos><pos>&sk;</pos></root>",
+            preserve_entities=True,
+        )
+        assert get_entity_texts(elem, "pos") == ["n", "v5r", "sk"]
+
+    def test_returns_single_entity_as_list(self):
+        elem = extract_xml("<root><pos>&n;</pos></root>", preserve_entities=True)
+        assert get_entity_texts(elem, "pos") == ["n"]
+
+    def test_returns_empty_list_when_none(self):
+        elem = extract_xml("<root></root>", preserve_entities=True)
+        assert get_entity_texts(elem, "pos") == []
+
+    def test_skips_empty_elements(self):
+        elem = extract_xml(
+            "<root><pos>&n;</pos><pos></pos><pos>&v5r;</pos></root>",
+            preserve_entities=True,
+        )
+        assert get_entity_texts(elem, "pos") == ["n", "v5r"]
+
+    def test_skips_plain_text_children(self):
+        """
+        Plain text children are not entities, so they're skipped.
+        """
+        elem = extract_xml(
+            "<root><pos>noun</pos><pos>&v5r;</pos></root>",
+            preserve_entities=True,
+        )
+        assert get_entity_texts(elem, "pos") == ["v5r"]
+
+    def test_returns_all_matches_for_misc(self):
+        elem = extract_xml(
+            "<root><misc>&abbr;</misc><misc>&sk;</misc></root>",
+            preserve_entities=True,
+        )
+        assert get_entity_texts(elem, "misc") == ["abbr", "sk"]
+
+    def test_returns_all_matches_for_field(self):
+        elem = extract_xml(
+            "<root><field>&n;</field><field>&v5r;</field></root>",
+            preserve_entities=True,
+        )
+        assert get_entity_texts(elem, "field") == ["n", "v5r"]
 
 
 # ============================================================================
@@ -201,6 +321,7 @@ class TestDetectReb:
 # Tests for detect_keb
 # ============================================================================
 
+
 class TestDetectKeb:
     # detect_keb should return True for anything that is NOT a pure reading(`detect_reb` returns False).
 
@@ -233,7 +354,6 @@ class TestDetectKeb:
 
     def test_latin_with_kanji(self):
         assert detect_keb("A型") is True
-
 
     # Kanji related iteration marks alone
     def test_ditto_mark_alone(self):
