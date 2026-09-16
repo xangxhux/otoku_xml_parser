@@ -78,10 +78,11 @@ class Sense:
     parts_of_speech: list[str] = field(default_factory=list)
     fields: list[str] = field(default_factory=list)
     misc_tags: list[str] = field(default_factory=list)
+    s_inf: Optional[str] = None  # The sense information
     dialect_tags: list[str] = field(default_factory=list)
     glosses: list[Gloss] = field(default_factory=list)
     language_sources: list[LanguageSource] = field(default_factory=list)
-    links: list[SenseLink] = field(default_factory=list)
+    links: list[SenseLink] = field(default_factory=list) # various cross reference relationships (xref, ant, etc.)
 
 
 @dataclass

@@ -490,6 +490,7 @@ class TestParseEntry:
                     <pos>vi</pos>
                     <field>computing</field>
                     <misc>col</misc>
+                    <s_inf>as ...（すると／しては）～（から／ので）</s_inf>
                     <gloss>to run</gloss>
                     <gloss>to dash</gloss>
                     <lsource xml:lang="eng">run</lsource>
@@ -519,6 +520,7 @@ class TestParseEntry:
         assert sense.parts_of_speech == ["v5r", "vi"]
         assert sense.fields == ["computing"]
         assert sense.misc_tags == ["col"]
+        assert sense.s_inf == "as ...（すると／しては）～（から／ので）"
         assert len(sense.glosses) == 2
         assert sense.glosses[0].text == "to run"
         assert sense.glosses[1].text == "to dash"

@@ -518,6 +518,7 @@ various information fields.
                 <sense>
                         <pos>&adj-i;</pos>
                         <misc>&uk;</misc>
+                        <s_inf>when marking a test, homework, etc.</s_inf>
                         <gloss>ticklish</gloss>
                 </sense>
                 <sense>
@@ -534,6 +535,7 @@ various information fields.
                 </r_ele>
                 <sense>
                         <pos>&adj-i;</pos>
+                        <s_inf>placeholder used to censor individual characters or indicate a space to be filled in</s_inf>
                         <dial>&ksb;</dial>
                         <gloss>tired</gloss>
                         <gloss>frazzled</gloss>
@@ -572,6 +574,7 @@ various information fields.
                 <sense>
                         <pos>&v5m;</pos>
                         <pos>&vt;</pos>
+                        <s_inf>someone or something distant from both speaker and listener, or situation unfamiliar to both speaker and listener</s_inf>
                         <gloss>to pity</gloss>
                         <gloss>to feel sympathy for</gloss>
                         <gloss>to sympathize with</gloss>
@@ -584,6 +587,7 @@ various information fields.
                         <pos>&v5m;</pos>
                         <pos>&vt;</pos>
                         <misc>&poet;</misc>
+                        <s_inf>used to express sympathy</s_inf>
                         <gloss>to enjoy the beauty of</gloss>
                         <gloss>to appreciate</gloss>
                         <gloss>to admire</gloss>
@@ -625,6 +629,7 @@ various information fields.
                 </r_ele>
                 <sense>
                         <pos>&n;</pos>
+                        <s_inf>as ...（すると／しては）～（から／ので）</s_inf>
                         <gloss>one step higher</gloss>
                         <gloss>one better</gloss>
                         <gloss>cut above</gloss>

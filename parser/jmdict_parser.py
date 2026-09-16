@@ -122,6 +122,7 @@ def parse_sense(sense_elem, sense_index: int) -> Sense:
     sense.parts_of_speech = get_texts(sense_elem, "pos")
     sense.fields = get_texts(sense_elem, "field")
     sense.misc_tags = get_texts(sense_elem, "misc")
+    sense.s_inf = get_text(sense_elem, "s_inf")
     sense.dialect_tags = get_texts(sense_elem, "dial")
 
     # Glosses
