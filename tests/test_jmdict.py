@@ -213,8 +213,8 @@ class TestParseLink:
     def test_parses_reading_only_link(self):
         elem = extract_xml("<xref>いきる</xref>")
         result = parse_link(elem, "xref")
-        assert result.parsed_keb == "いきる"
-        assert result.parsed_reb is None
+        assert result.parsed_reb == "いきる"
+        assert result.parsed_keb is None
 
     def test_parses_kanji_and_sense_index(self):
         elem = extract_xml("<ant>何れ・1</ant>")
@@ -241,10 +241,20 @@ class TestParseLink:
     def test_handles_empty_link(self):
         elem = extract_xml("<xref/>")
         result = parse_link(elem, "xref")
-        assert result.raw_target == ""
-        assert result.parsed_keb is None
-        assert result.parsed_reb is None
-        assert result.parsed_sense_index is None
+        assert result == None
+    
+    def test_handles_malformed_link(self):
+        # Links that don't conform to the expected format should return None
+        elem1 = extract_xml("<xref>走る・奔る</xref>")
+        elem2 = extract_xml("<xref>走る・2・はしる</xref>")
+        elem3 = extract_xml("<xref>走る・走る・走る・走る</xref>")
+
+        result1 = parse_link(elem1, "xref")
+        result2 = parse_link(elem2, "xref")
+        result3 = parse_link(elem3, "xref")
+        assert result1 is None
+        assert result2 is None
+        assert result3 is None
 
     def test_ant_link_type(self):
         elem = extract_xml("<ant>生</ant>")

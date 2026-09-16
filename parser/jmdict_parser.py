@@ -5,8 +5,6 @@ Streams through the JMdict XML file, parsing each entry
 and inserting it into the database.
 """
 
-from parser.helpers import get_text, get_texts
-
 from model.jmdict_entity import (
     Entry,
     KanjiElement,
@@ -15,6 +13,12 @@ from model.jmdict_entity import (
     LanguageSource,
     SenseLink,
     Sense,
+)
+from parser.helpers import (
+    get_text,
+    get_texts,
+    detect_reb,
+    detect_keb,
 )
 
 
@@ -61,12 +65,14 @@ def parse_lsource(lsource_elem) -> LanguageSource:
 def parse_link(link_elem, link_type: str) -> SenseLink:
     """
     Parse a cross-reference element (xref, ant, etc.).
+    Empty links or links that don't conform to the expected format will return None.
 
     The raw text can be in formats like:
       - '生'                    (kanji only)
       - 'いきる'                (reading only)
       - '生きる・いきる'         (kanji + reading)
       - '何れ・1'               (kanji + sense number)
+      - 'どこ・１'              (reading + sense number)
       - '駆ける・かける・1'      (kanji + reading + sense number)
 
     From JMdict on `xref`(2026-09-03,ln.145):
@@ -82,6 +88,8 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
 
     # Split by the Japanese middle dot (・)
     parts = [p.strip() for p in raw.split("・") if p.strip()]
+    if len(parts) == 0 or len(parts) > 3:
+        return None  # Malformed link
 
     parsed_keb = None
     parsed_reb = None
@@ -94,19 +102,31 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
         else:
             parsed_keb = parts[0]
     elif len(parts) == 2:
-        # Either (kanji, reading) or (kanji, sense_index)
         if parts[1].isdigit():
-            parsed_keb = parts[0]
+            # Either (kanji, sense_index) or (reading, sense_index)
+            if detect_reb(parts[0]):
+                parsed_reb = parts[0]
+            else:
+                parsed_keb = parts[0]
             parsed_sense_index = int(parts[1])
         else:
+            # Should be (kanji, reading)
             parsed_keb = parts[0]
-            parsed_reb = parts[1]
+            if detect_reb(parts[1]):
+                parsed_reb = parts[1]
+            else:
+                return None  # Malformed: second part is not a reading
     elif len(parts) >= 3:
         # (kanji, reading, sense_index)
         parsed_keb = parts[0]
-        parsed_reb = parts[1]
+        if detect_reb(parts[1]):
+            parsed_reb = parts[1]
+        else:
+            return None  # Malformed: second part is not a reading
         if parts[2].isdigit():
             parsed_sense_index = int(parts[2])
+        else:
+            return None  # Malformed: third part is not a sense index
 
     return SenseLink(
         link_type=link_type,
