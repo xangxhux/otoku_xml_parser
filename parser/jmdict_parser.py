@@ -68,6 +68,15 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
       - '生きる・いきる'         (kanji + reading)
       - '何れ・1'               (kanji + sense number)
       - '駆ける・かける・1'      (kanji + reading + sense number)
+
+    From JMdict on `xref`(2026-09-03,ln.145):
+        "This element is used to indicate a cross-reference to another
+        entry with a similar or related meaning or sense. The content of
+        this element is typically a keb or reb element in another entry. In some
+        cases a keb will be followed by a reb and/or a sense number to provide
+        a precise target for the cross-reference. Where this happens, a JIS
+        "centre-dot" (0x2126) is placed between the components of the
+        cross-reference. The target keb or reb must not contain a centre-dot."
     """
     raw = link_elem.text.strip() if link_elem.text else ""
 
@@ -79,21 +88,13 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
     parsed_sense_index = None
 
     if len(parts) == 1:
-        # TODO: Implement logic to determine if it's keb or reb
-        parsed_keb = parts[0]
+        # Either kanji or reading
+        if detect_reb(parts[0]):
+            parsed_reb = parts[0]
+        else:
+            parsed_keb = parts[0]
     elif len(parts) == 2:
-        """
-        Either (kanji, reading) or (kanji, sense_index)
-
-        From JMdict documentation(date:2026-09-03, line 145):
-        "This element is used to indicate a cross-reference to another
-        entry with a similar or related meaning or sense. The content of
-        this element is typically a keb or reb element in another entry. In some
-        cases a keb will be followed by a reb and/or a sense number to provide
-        a precise target for the cross-reference. Where this happens, a JIS
-        "centre-dot" (0x2126) is placed between the components of the
-        cross-reference. The target keb or reb must not contain a centre-dot."
-        """
+        # Either (kanji, reading) or (kanji, sense_index)
         if parts[1].isdigit():
             parsed_keb = parts[0]
             parsed_sense_index = int(parts[1])
