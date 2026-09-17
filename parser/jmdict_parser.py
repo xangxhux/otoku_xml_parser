@@ -5,8 +5,6 @@ Streams through the JMdict XML file, parsing each entry
 and inserting it into the database.
 """
 
-from parser.helpers import get_text, get_texts
-
 from model.jmdict_entity import (
     Entry,
     KanjiElement,
@@ -16,13 +14,22 @@ from model.jmdict_entity import (
     SenseLink,
     Sense,
 )
+from parser.helpers import (
+    get_text,
+    get_texts,
+    get_entity_texts,
+    clean_text,
+    detect_reb,
+    detect_keb,
+)
+import lxml.etree as ElementTree
 
 
 def parse_kanji_element(k_ele) -> KanjiElement:
     """Parse a <k_ele> element."""
     return KanjiElement(
         keb=get_text(k_ele, "keb"),
-        ke_inf=get_texts(k_ele, "ke_inf"),
+        ke_inf=get_entity_texts(k_ele, "ke_inf"),
         ke_pri=get_texts(k_ele, "ke_pri"),
     )
 
@@ -31,7 +38,7 @@ def parse_reading_element(r_ele) -> ReadingElement:
     """Parse an <r_ele> element."""
     return ReadingElement(
         reb=get_text(r_ele, "reb"),
-        re_inf=get_texts(r_ele, "re_inf"),
+        re_inf=get_entity_texts(r_ele, "re_inf"),
         re_pri=get_texts(r_ele, "re_pri"),
         re_restr=get_texts(r_ele, "re_restr"),
         re_nokanji=r_ele.find("re_nokanji") is not None,
@@ -41,7 +48,7 @@ def parse_reading_element(r_ele) -> ReadingElement:
 def parse_gloss(gloss_elem) -> Gloss:
     """Parse a <gloss> element with its attributes."""
     return Gloss(
-        text=gloss_elem.text.strip() if gloss_elem.text else "",
+        text=clean_text(gloss_elem.text) if gloss_elem.text else "",
         lang=gloss_elem.get("{http://www.w3.org/XML/1998/namespace}lang", "eng"),
         gender=gloss_elem.get("g_gend"),
         gloss_type=gloss_elem.get("g_type"),
@@ -51,7 +58,7 @@ def parse_gloss(gloss_elem) -> Gloss:
 def parse_lsource(lsource_elem) -> LanguageSource:
     """Parse an <lsource> element."""
     return LanguageSource(
-        src_text=lsource_elem.text.strip() if lsource_elem.text else None,
+        src_text=clean_text(lsource_elem.text.strip()) if lsource_elem.text else None,
         src_lang=lsource_elem.get("{http://www.w3.org/XML/1998/namespace}lang", "eng"),
         is_wasei=lsource_elem.get("ls_wasei") == "y",
         is_partial=lsource_elem.get("ls_type") == "part",
@@ -61,31 +68,17 @@ def parse_lsource(lsource_elem) -> LanguageSource:
 def parse_link(link_elem, link_type: str) -> SenseLink:
     """
     Parse a cross-reference element (xref, ant, etc.).
+    Empty links or links that don't conform to the expected format will return None.
 
     The raw text can be in formats like:
       - '生'                    (kanji only)
       - 'いきる'                (reading only)
       - '生きる・いきる'         (kanji + reading)
       - '何れ・1'               (kanji + sense number)
+      - 'どこ・１'              (reading + sense number)
       - '駆ける・かける・1'      (kanji + reading + sense number)
-    """
-    raw = link_elem.text.strip() if link_elem.text else ""
 
-    # Split by the Japanese middle dot (・)
-    parts = [p.strip() for p in raw.split("・") if p.strip()]
-
-    parsed_keb = None
-    parsed_reb = None
-    parsed_sense_index = None
-
-    if len(parts) == 1:
-        # TODO: Implement logic to determine if it's keb or reb
-        parsed_keb = parts[0]
-    elif len(parts) == 2:
-        """
-        Either (kanji, reading) or (kanji, sense_index)
-
-        From JMdict documentation(date:2026-09-03, line 145):
+    From JMdict on `xref`(2026-09-03,ln.145):
         "This element is used to indicate a cross-reference to another
         entry with a similar or related meaning or sense. The content of
         this element is typically a keb or reb element in another entry. In some
@@ -93,19 +86,50 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
         a precise target for the cross-reference. Where this happens, a JIS
         "centre-dot" (0x2126) is placed between the components of the
         cross-reference. The target keb or reb must not contain a centre-dot."
-        """
-        if parts[1].isdigit():
-            parsed_keb = parts[0]
-            parsed_sense_index = int(parts[1])
+    """
+    raw = link_elem.text.strip() if link_elem.text else ""
+
+    # Split by the Japanese middle dot (・)
+    parts = [p.strip() for p in raw.split("・") if p.strip()]
+    if len(parts) == 0 or len(parts) > 3:
+        return None  # Malformed link
+
+    parsed_keb = None
+    parsed_reb = None
+    parsed_sense_index = None
+
+    if len(parts) == 1:
+        # Either kanji or reading
+        if detect_reb(parts[0]):
+            parsed_reb = parts[0]
         else:
             parsed_keb = parts[0]
-            parsed_reb = parts[1]
+    elif len(parts) == 2:
+        if parts[1].isdigit():
+            # Either (kanji, sense_index) or (reading, sense_index)
+            if detect_reb(parts[0]):
+                parsed_reb = parts[0]
+            else:
+                parsed_keb = parts[0]
+            parsed_sense_index = int(parts[1])
+        else:
+            # Should be (kanji, reading)
+            parsed_keb = parts[0]
+            if detect_reb(parts[1]):
+                parsed_reb = parts[1]
+            else:
+                return None  # Malformed: second part is not a reading
     elif len(parts) >= 3:
         # (kanji, reading, sense_index)
         parsed_keb = parts[0]
-        parsed_reb = parts[1]
+        if detect_reb(parts[1]):
+            parsed_reb = parts[1]
+        else:
+            return None  # Malformed: second part is not a reading
         if parts[2].isdigit():
             parsed_sense_index = int(parts[2])
+        else:
+            return None  # Malformed: third part is not a sense index
 
     return SenseLink(
         link_type=link_type,
@@ -118,11 +142,13 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
 
 def parse_sense(sense_elem, sense_index: int) -> Sense:
     """Parse a <sense> element with all its children."""
+
     sense = Sense(sense_index=sense_index)
-    sense.parts_of_speech = get_texts(sense_elem, "pos")
-    sense.fields = get_texts(sense_elem, "field")
-    sense.misc_tags = get_texts(sense_elem, "misc")
-    sense.dialect_tags = get_texts(sense_elem, "dial")
+    sense.parts_of_speech = get_entity_texts(sense_elem, "pos")
+    sense.fields = get_entity_texts(sense_elem, "field")
+    sense.misc_tags = get_entity_texts(sense_elem, "misc")
+    sense.s_inf = get_text(sense_elem, "s_inf")
+    sense.dialect_tags = get_entity_texts(sense_elem, "dial")
 
     # Glosses
     for gloss_elem in sense_elem.findall("gloss"):
