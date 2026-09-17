@@ -6,6 +6,7 @@ Common test helper functions
 import lxml.etree as ET
 
 from parser.helpers import (
+    clean_text,
     get_text,
     get_texts,
     get_entity_text,
@@ -392,3 +393,16 @@ class TestDetectKeb:
     def test_none_like_input(self):
         # Ensure it doesn't crash on falsy input
         assert detect_keb(None) is False
+
+
+# ============================================================================
+# Tests for text utils
+# ============================================================================
+class TestTextUtil:
+    def test_returns_correctly_formatted_string(self):
+        str = """Himmel\n        
+            \t is\t\r
+        always here ^^\t
+        
+        """
+        assert clean_text(str) == "Himmel is always here ^^"

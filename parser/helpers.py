@@ -7,12 +7,21 @@ from typing import Callable, Iterator
 import regex as re
 import lxml.etree as ET
 
+_WHITESPACE_RE = re.compile(r"\s+")
+
+
+def clean_text(text: str) -> str:
+    """Collapse whitespace runs into a single space."""
+    if not text:
+        return text
+    return _WHITESPACE_RE.sub(" ", text).strip()
+
 
 def get_text(element, tag: str, default: str = "") -> str:
     """Safely get the text content of a child element."""
     child = element.find(tag)
     if child is not None and child.text:
-        return child.text.strip()
+        return clean_text(child.text)
     return default
 
 
@@ -24,7 +33,7 @@ def get_entity_text(element, tag: str, default: str = "") -> str:
     """
     child = element.find(tag)
     if child is not None and len(child) > 0 and child[0].text:
-        raw = child[0].text.strip()
+        raw = clean_text(child[0].text)
         if raw.startswith("&") and raw.endswith(";"):
             raw = raw[1:-1]
         return raw
@@ -36,7 +45,7 @@ def get_texts(element, tag: str) -> list[str]:
     results = []
     for child in element.findall(tag):
         if child.text:
-            results.append(child.text.strip())
+            results.append(clean_text(child.text))
     return results
 
 
@@ -49,7 +58,7 @@ def get_entity_texts(element, tag: str) -> list[str]:
     results = []
     for child in element.findall(tag):
         if len(child) > 0 and child[0].text:
-            raw = child[0].text.strip()
+            raw = clean_text(child[0].text)
             if raw.startswith("&") and raw.endswith(";"):
                 raw = raw[1:-1]
             results.append(raw)
@@ -98,12 +107,12 @@ def detect_reb(text: str) -> bool:
     # \u30FB        ・ middle dot
     # \u301C        〜 wave dash
     # Characters allowed in a JMdict <reb> element
-    REB_PATTERN = re.compile(
+    _REB_PATTERN = re.compile(
         r"^[\p{Hira}\p{Kana}\u30FC\u30FD\u30FE\u309D\u309E\u30FB\u301C]+$"
     )
     if not text:
         return False
-    return bool(REB_PATTERN.fullmatch(text.strip()))
+    return bool(_REB_PATTERN.fullmatch(clean_text(text)))
 
 
 def detect_keb(text: str) -> bool:
@@ -124,7 +133,7 @@ def detect_keb(text: str) -> bool:
     if not text:
         return False
     # If it's a valid reading, it can't be a keb
-    if detect_reb(text.strip()):
+    if detect_reb(clean_text(text)):
         return False
     # Otherwise, it's most likely a keb
     return True

@@ -18,9 +18,11 @@ from parser.helpers import (
     get_text,
     get_texts,
     get_entity_texts,
+    clean_text,
     detect_reb,
     detect_keb,
 )
+import lxml.etree as ElementTree
 
 
 def parse_kanji_element(k_ele) -> KanjiElement:
@@ -46,7 +48,7 @@ def parse_reading_element(r_ele) -> ReadingElement:
 def parse_gloss(gloss_elem) -> Gloss:
     """Parse a <gloss> element with its attributes."""
     return Gloss(
-        text=gloss_elem.text.strip() if gloss_elem.text else "",
+        text=clean_text(gloss_elem.text) if gloss_elem.text else "",
         lang=gloss_elem.get("{http://www.w3.org/XML/1998/namespace}lang", "eng"),
         gender=gloss_elem.get("g_gend"),
         gloss_type=gloss_elem.get("g_type"),
@@ -56,7 +58,7 @@ def parse_gloss(gloss_elem) -> Gloss:
 def parse_lsource(lsource_elem) -> LanguageSource:
     """Parse an <lsource> element."""
     return LanguageSource(
-        src_text=lsource_elem.text.strip() if lsource_elem.text else None,
+        src_text=clean_text(lsource_elem.text.strip()) if lsource_elem.text else None,
         src_lang=lsource_elem.get("{http://www.w3.org/XML/1998/namespace}lang", "eng"),
         is_wasei=lsource_elem.get("ls_wasei") == "y",
         is_partial=lsource_elem.get("ls_type") == "part",
