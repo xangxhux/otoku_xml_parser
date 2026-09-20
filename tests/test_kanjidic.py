@@ -413,39 +413,42 @@ class TestParseCharacter:
                 </codepoint>
                 <radical>
                     <rad_value rad_type="classical">156</rad_value>
+                    <rad_value rad_type="nelson_c">138</rad_value>
                 </radical>
                 <misc>
                     <grade>2</grade>
-                    <stroke_count>7</stroke_count>
-                    <variant var_type="jis208">1-76-65</variant>
+                    <stroke_count>6</stroke_count>
+                    <stroke_count>5</stroke_count>
+                    <stroke_count>7</stroke_count>                    
+                    <variant var_type="jis208">1-76-30</variant>
+                    <variant var_type="jis212">1-43-07</variant>
                     <freq>626</freq>
                     <jlpt>3</jlpt>
+                    <rad_name>まきがまえ</rad_name>
+                    <rad_name>えながまえ</rad_name>
+                    <rad_name>どうがまえ</rad_name>
+                    <rad_name>けいがまえ</rad_name>
                 </misc>
                 <dic_number>
                     <dic_ref dr_type="nelson_c">4539</dic_ref>
-                    <dic_ref dr_type="nelson_n">5845</dic_ref>
+                    <dic_ref dr_type="moro" m_vol="1" m_page="0525">272</dic_ref>
                 </dic_number>
                 <query_code>
-                    <q_code qc_type="skip">2-3-4</q_code>
+                    <q_code qc_type="skip" skip_misclass="posn">4-2-4</q_code>
                     <q_code qc_type="deroo">1470</q_code>
                 </query_code>
                 <reading_meaning>
                     <rmgroup>
-                        <reading r_type="pinyin">zou3</reading>
-                        <reading r_type="korean_r">ju</reading>
-                        <reading r_type="korean_h">주</reading>
                         <reading r_type="vietnam">Tẩu</reading>
                         <reading r_type="ja_on">ソウ</reading>
                         <reading r_type="ja_kun">はし.る</reading>
                         <meaning>run</meaning>
-                        <meaning m_lang="fr">courir</meaning>
                         <meaning m_lang="es">correr</meaning>
-                        <meaning m_lang="es">escapar</meaning>
-                        <meaning m_lang="es">huir</meaning>
-                        <meaning m_lang="pt">Correr</meaning>
                         <meaning m_lang="pt">corrida</meaning>
                     </rmgroup>
-                    <nanori>はしり</nanori>
+                <nanori>や</nanori>
+                <nanori>つぎ</nanori>
+                <nanori>つぐ</nanori>
                 </reading_meaning>
             </character>
         """
@@ -457,18 +460,89 @@ class TestParseCharacter:
         assert result.freq == 626
         assert result.grade == 2
 
+        # Stroke Counts
+        assert len(result.stroke_counts) == 3
+        assert result.stroke_counts[0] == 6
+        assert result.stroke_counts[1] == 5
+        assert result.stroke_counts[2] == 7
+
+        # rad_names
+        assert len(result.rad_names) == 4
+        assert result.stroke_counts[0] == "まきがまえ"
+        assert result.stroke_counts[1] == "えながまえ"
+        assert result.stroke_counts[2] == "どうがまえ"
+        assert result.stroke_counts[3] == "けいがまえ"
+
         # Codepoints
         assert len(result.codepoints) == 2
-        assert result.kanji_elements[0].value == "8d70"
-        assert result.kanji_elements[1].value == "1-33-86"
-        assert result.kanji_elements[0].cp_type == "ucs"
-        assert result.kanji_elements[1].cp_type == "jis208"
+        assert result.codepoints[0].value == "8d70"
+        assert result.codepoints[0].cp_type == "ucs"
+        assert result.codepoints[1].value == "1-33-86"
+        assert result.codepoints[1].cp_type == "jis208"
 
         # Radicals
-        # Variants
-        # Query Codes
-        # Stroke Counts
-        # rad_names
+        assert len(result.radicals) == 2
+        assert result.radicals[0].value == "156"
+        assert result.radicals[0].rad_type == "classical"
+        assert result.radicals[0].order_index == 0
+        assert result.radicals[1].value == "138"
+        assert result.radicals[1].rad_type == "nelson_c"
+        assert result.radicals[1].order_index == 1
+
         # Dictionary Refs
-        # Nanori
+        assert len(result.dic_nums) == 2
+        assert result.dic_nums[0].ref_index == "4539"
+        assert result.dic_nums[0].ref_src == "nelson_c"
+        assert result.dic_nums[0].moro_page == None
+        assert result.dic_nums[0].moro_vol == None
+        assert result.dic_nums[1].ref_index == "272"
+        assert result.dic_nums[1].ref_src == "moro"
+        assert result.dic_nums[1].moro_page == "0525"
+        assert result.dic_nums[1].moro_vol == "1"
+
+        # Query Codes
+        assert len(result.radicals) == 2
+        assert result.query_codes[0].code == "4-2-4"
+        assert result.query_codes[0].q_type == "skip"
+        assert result.query_codes[0].skip_misclass == "posn"
+        assert result.query_codes[1].code == "1470"
+        assert result.query_codes[1].q_type == "deroo"
+        assert result.query_codes[1].skip_misclass == None
+
+        # Variants
+        assert len(result.variants) == 2
+        assert result.variants[0].value == "1-76-30"
+        assert result.variants[0].var_type == "jis208"
+        assert result.variants[0].order_index == 0
+        assert result.variants[0].value == "1-43-07"
+        assert result.variants[0].var_type == "jis212"
+        assert result.variants[0].order_index == 1
+
         # Reading Meanings
+        assert len(result.reading_meanings[0]) == 1
+        assert len(result.reading_meanings[0].readings) == 3
+        assert result.reading_meanings[0].readings[0].value == "Tẩu"
+        assert result.reading_meanings[0].readings[0].r_type == "vietnam"
+        assert result.reading_meanings[0].readings[0].order_index == 0
+        assert result.reading_meanings[0].readings[0].value == "ソウ"
+        assert result.reading_meanings[0].readings[0].r_type == "ja_on"
+        assert result.reading_meanings[0].readings[0].order_index == 1
+        assert result.reading_meanings[0].readings[0].value == "はし.る"
+        assert result.reading_meanings[0].readings[0].r_type == "ja_kun"
+        assert result.reading_meanings[0].readings[0].order_index == 2
+        assert len(result.reading_meanings[0].meanings) == 3
+        assert result.reading_meanings[0].meanings[0].value == "run"
+        assert result.reading_meanings[0].meanings[0].src_lang == "eng"
+        assert result.reading_meanings[0].meanings[0].order_index == 0
+        assert result.reading_meanings[0].meanings[1].value == "correr"
+        assert result.reading_meanings[0].meanings[1].src_lang == "es"
+        assert result.reading_meanings[0].meanings[1].order_index == 1
+        assert result.reading_meanings[0].meanings[2].value == "corrida"
+        assert result.reading_meanings[0].meanings[2].src_lang == "pt"
+        assert result.reading_meanings[0].meanings[2].order_index == 2
+
+        # Nanori
+        assert len(result.nanori) == 3
+        assert result.nanori[0] == "や"
+        assert result.nanori[1] == "つぎ"
+        assert result.nanori[2] == "つぐ"

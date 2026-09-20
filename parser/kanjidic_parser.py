@@ -50,5 +50,5 @@ def parse_meaning():
     raise NotImplementedError()
 
 
-def parse_character():
+def parse_character() -> Character:
     raise NotImplementedError()

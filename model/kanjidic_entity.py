@@ -36,6 +36,7 @@ class Radical:
     rad_type: str  # Radical classification system
     order_index: int
 
+
 @dataclass
 class Variant:
     """Represents the <variant> element.
@@ -58,6 +59,7 @@ class Variant:
     value: str  # The variant character or form
     var_type: str  # Variant type
     order_index: int
+
 
 @dataclass
 class DictionaryReference:
@@ -111,8 +113,8 @@ class DictionaryReference:
 
     ref_index: str  # The page index in the referenced dictionary
     ref_src: str  # Source dictionary code
-    moro_vol: str  # Morohashi volume (only used for Morohashi references)
-    moro_page: str  # Morohashi page (only used for Morohashi references)
+    moro_vol: str = None  # Morohashi volume (only used for Morohashi references)
+    moro_page: str = None  # Morohashi page (only used for Morohashi references)
 
 
 @dataclass
@@ -128,7 +130,7 @@ class QueryCode:
     """
 
     code: str  # The query code value
-    q_type: str = None # Query code system
+    q_type: str = None  # Query code system
     skip_misclass: str = None  # Optional SKIP misclassification flag (may be None)
 
 
@@ -200,13 +202,6 @@ class Character:
     # May be None if the kanji isn't in the frequency list.
     freq: int
 
-    # Unicode (and legacy) codepoints for this character. A kanji
-    # may have multiple entries here for different encodings.
-    codepoints: list[Codepoint] = field(default_factory=list)
-
-    # Radical classifications for the kanji.
-    radicals: list[Radical] = field(default_factory=list)
-
     # School grade level at which the kanji is taught (1-6 for
     # elementary, 8 for middle school, 9-10 for jinmeiyō).
     # This field will be missing on some kanjis.
@@ -219,6 +214,13 @@ class Character:
 
     # Name(s) of the radical in Japanese.
     rad_names: list[str] = field(default_factory=list)
+
+    # Unicode (and legacy) codepoints for this character. A kanji
+    # may have multiple entries here for different encodings.
+    codepoints: list[Codepoint] = field(default_factory=list)
+
+    # Radical classifications for the kanji.
+    radicals: list[Radical] = field(default_factory=list)
 
     # References to this kanji in external dictionaries. Allows
     # cross-referencing against Nelson, Halpern, Heisig, etc.
