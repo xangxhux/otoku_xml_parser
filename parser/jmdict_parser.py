@@ -5,6 +5,7 @@ Streams through the JMdict XML file, parsing each entry
 and inserting it into the database.
 """
 
+from utils.number import to_int
 from model.jmdict_entity import (
     Entry,
     KanjiElement,
@@ -22,7 +23,6 @@ from parser.helpers import (
     detect_reb,
     detect_keb,
 )
-import lxml.etree as ElementTree
 
 
 def parse_kanji_element(k_ele) -> KanjiElement:
@@ -111,7 +111,7 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
                 parsed_reb = parts[0]
             else:
                 parsed_keb = parts[0]
-            parsed_sense_index = int(parts[1])
+            parsed_sense_index = to_int(parts[1])
         else:
             # Should be (kanji, reading)
             parsed_keb = parts[0]
@@ -127,7 +127,7 @@ def parse_link(link_elem, link_type: str) -> SenseLink:
         else:
             return None  # Malformed: second part is not a reading
         if parts[2].isdigit():
-            parsed_sense_index = int(parts[2])
+            parsed_sense_index = to_int(parts[2])
         else:
             return None  # Malformed: third part is not a sense index
 
@@ -175,16 +175,11 @@ def parse_entry(entry_elem) -> Optional[Entry]:
     Parse a complete <entry> element.
     Returns None if the entry is malformed.
     """
-    ent_seq_text = get_text(entry_elem, "ent_seq")
-    if not ent_seq_text:
+    ent_seq_text = to_int(get_text(entry_elem, "ent_seq"))
+    if ent_seq_text is None:
         return None
 
-    try:
-        ent_seq = int(ent_seq_text)
-    except ValueError:
-        return None
-
-    entry = Entry(ent_seq=ent_seq)
+    entry = Entry(ent_seq=ent_seq_text)
 
     # Kanji elements
     for k_ele in entry_elem.findall("k_ele"):
@@ -198,7 +193,7 @@ def parse_entry(entry_elem) -> Optional[Entry]:
         if re.reb:  # Only add if there's an actual reading
             entry.reading_elements.append(re)
 
-    # Senses
+    # Senses elements
     for idx, sense_elem in enumerate(entry_elem.findall("sense")):
         entry.senses.append(parse_sense(sense_elem, idx))
 
