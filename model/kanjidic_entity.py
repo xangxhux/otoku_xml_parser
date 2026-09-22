@@ -113,15 +113,19 @@ class DictionaryReference:
 
     ref_index: str  # The page index in the referenced dictionary
     ref_src: str  # Source dictionary code
-    moro_vol: str = None  # Morohashi volume (only used for Morohashi references)
-    moro_page: str = None  # Morohashi page (only used for Morohashi references)
+    moro_vol: Optional[str] = (
+        None  # Morohashi volume (only used for Morohashi references)
+    )
+    moro_page: Optional[str] = (
+        None  # Morohashi page (only used for Morohashi references)
+    )
 
 
 @dataclass
 class QueryCode:
     """Represents the <q_code> element.
 
-    `q_type` possible values:
+    `qc_type` possible values:
     - skip:        Halpern's SKIP(System of Kanji Indexing by Patterns) code: n-nn-nn
     - sh_desc:     The Kanji Dictionary(Tuttle 1996) by Spahn and Hadamitzky : nxnn.n
     - four_corner: The "Four Corner"(1928) by Wang Chen
@@ -130,8 +134,10 @@ class QueryCode:
     """
 
     code: str  # The query code value
-    q_type: str = None  # Query code system
-    skip_misclass: str = None  # Optional SKIP misclassification flag (may be None)
+    qc_type: str  # Query code system
+    skip_misclass: Optional[str] = (
+        None  # Optional SKIP misclassification flag (may be None)
+    )
 
 
 @dataclass
@@ -149,7 +155,7 @@ class Reading:
 
     value: str  # The reading itself, e.g. "いきる" or "セイ"
     r_type: str  # Reading type
-    order_index: int = None
+    order_index: int
     # on_type    # (UNUSED)
     # r_status   # (UNUSED)
 
@@ -159,12 +165,12 @@ class Meaning:
     """Represents the <meaning> element.
 
     KANJIDIC primarily provides English meanings, but the schema
-    allows for other languages via the `src_lang` field(ISO 639-1 code).
+    allows for other languages via the `m_lang` field(ISO 639-1 code).
     """
 
     value: str
-    src_lang: str = "en"  # ISO 639-1 language code (default: English)
-    order_index: int = None
+    m_lang: Optional[str] = "en"  # ISO 639-1 language code (default: English)
+    order_index: Optional[int] = None
 
 
 @dataclass
@@ -180,6 +186,43 @@ class RMGroup:
 
 
 @dataclass
+class ReadingMeaning:
+    """Represents the <reading_meaning> element."""
+
+    rmgroup: RMGroup = field(default_factory=RMGroup)
+    # Readings used only in Japanese personal names (nanori).
+    nanori: list[str] = field(default_factory=list)
+
+
+@dataclass
+class MiscData:
+    """Represents the <misc> element."""
+
+    # Name(s) of the radical in Japanese.
+    rad_names: list[str] = field(default_factory=list)
+
+    # If multiple counts, the first is the accepted stroke count
+    # and subsequent ones are common miscounts.
+    stroke_counts: list[int] = field(default_factory=list)
+
+    # Orthographic variants of the kanji.
+    variants: list[Variant] = field(default_factory=list)
+
+    # School grade level at which the kanji is taught (1-6 for
+    # elementary, 8 for middle school, 9-10 for jinmeiyō).
+    # This field will be missing on some kanjis.
+    grade: Optional[int] = None
+
+    # Frequency rank of the kanji in newspapers from most common to least
+    # May be None if the kanji isn't in the frequency list.
+    freq: Optional[int] = None  # 1 - 2500(2501)
+
+    # Old JLPT level (1-4) at which the kanji was tested. The old
+    # JLPT system was replaced in 2010, but KANJIDIC still uses it.
+    jlpt: Optional[int] = None
+
+
+@dataclass
 class Character:
     """Represents the <character> element.
 
@@ -190,30 +233,8 @@ class Character:
     element in the KANJIDIC XML.
     """
 
-    # The kanji character itself
+    # The kanji character in UTF8 coding
     literal: str
-
-    # Old JLPT level (1-4) at which the kanji was tested. The old
-    # JLPT system was replaced in 2010, but KANJIDIC still uses it.
-    jlpt: int
-
-    # Frequency rank of the kanji in newspapers
-    # (1 = most common, 2500(2501)=least common).
-    # May be None if the kanji isn't in the frequency list.
-    freq: int
-
-    # School grade level at which the kanji is taught (1-6 for
-    # elementary, 8 for middle school, 9-10 for jinmeiyō).
-    # This field will be missing on some kanjis.
-    grade: int = None
-
-    # Number of strokes. Usually a single value, but can be a list
-    # where the first is the accepted stroke count
-    # and subsequent ones are common miscounts.
-    stroke_counts: list[int] = field(default_factory=list)
-
-    # Name(s) of the radical in Japanese.
-    rad_names: list[str] = field(default_factory=list)
 
     # Unicode (and legacy) codepoints for this character. A kanji
     # may have multiple entries here for different encodings.
@@ -222,20 +243,15 @@ class Character:
     # Radical classifications for the kanji.
     radicals: list[Radical] = field(default_factory=list)
 
+    # Miscellaneous data such as grade, stroke counts, variants, frequency, radical names and jlpt level
+    misc: MiscData = field(default_factory=MiscData)
+
     # References to this kanji in external dictionaries. Allows
     # cross-referencing against Nelson, Halpern, Heisig, etc.
-    dic_nums: list[DictionaryReference] = field(default_factory=list)
+    dic_num: Optional[list[DictionaryReference]] = field(default_factory=list)
 
     # Query codes (SKIP, Four-Corner, etc.) for shape-based lookup.
-    query_codes: list[QueryCode] = field(default_factory=list)
-
-    # Orthographic variants of the kanji.
-    variants: list[Variant] = field(default_factory=list)
+    query_codes: Optional[list[QueryCode]] = field(default_factory=list)
 
     # Grouped readings and their associated meanings.
-    reading_meanings: list[RMGroup] = field(default_factory=list)
-
-    # Readings used only in Japanese personal names (nanori).
-    # Note: This program parses this field as a direct sub-child of <character>
-    #       instead of a sub-child of `<reading_meaning>` (as in KANJIDIC)
-    nanori: list[str] = field(default_factory=list)
+    reading_meaning: Optional[ReadingMeaning] = field(default_factory=ReadingMeaning)

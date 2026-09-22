@@ -33,8 +33,8 @@ class Gloss:
     """Represents a <gloss> element with its attributes."""
 
     text: str
-    # TODO: Move to enum or constants for language codes 
-    lang: str = "eng"  # ISO 639-2 code
+    # TODO: Move to enum or constants for language codes
+    lang: Optional[str] = "eng"  # ISO 639-2 code
     gender: Optional[str] = None  # g_gend attribute
     gloss_type: Optional[str] = None  # g_type attribute
 
@@ -43,17 +43,17 @@ class Gloss:
 class LanguageSource:
     """Represents an <lsource> element."""
 
-    src_text: Optional[str] = None  # The source word
-    src_lang: str = "eng"  # ISO 639-2 code
-    is_wasei: bool = False  # ls_wasei="y"
-    is_partial: bool = False  # ls_type="part"
+    src_text: str  # The source word
+    src_lang: Optional[str] = "eng"  # ISO 639-2 code
+    is_wasei: Optional[bool] = False  # ls_wasei="y"
+    is_partial: Optional[bool] = False  # ls_type="part"
 
 
 @dataclass
 class SenseLink:
     """
     Represents a cross-reference link between elements (xref, ant, etc.).
-    
+
     The raw text can be in formats like:
     - '生'                    (kanji only)
     - 'いきる'                (reading only)
@@ -82,7 +82,9 @@ class Sense:
     dialect_tags: list[str] = field(default_factory=list)
     glosses: list[Gloss] = field(default_factory=list)
     language_sources: list[LanguageSource] = field(default_factory=list)
-    links: list[SenseLink] = field(default_factory=list) # various cross reference relationships (xref, ant, etc.)
+    links: list[SenseLink] = field(
+        default_factory=list
+    )  # various cross reference relationships (xref, ant, etc.)
 
 
 @dataclass

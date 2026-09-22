@@ -26,7 +26,7 @@ from parser.kanjidic_parser import (
     parse_dictionaryref,
     parse_meaning,
     parse_reading,
-    parse_rmgroup,
+    parse_misc,
     parse_character,
 )
 
@@ -38,16 +38,18 @@ from parser.kanjidic_parser import (
 class TestParseRadicalElement:
     def test_parses_radical(self):
         elem = extract_xml('<rad_value rad_type="classical">7</rad_value>')
-        result = parse_radical(elem)
+        result = parse_radical(elem, order_index=0)
         assert isinstance(result, Radical)
         assert result.value == 7
         assert result.rad_type == "classical"
+        assert result.order_index == 0
 
     def test_handles_missing_rad_type(self):
         elem = extract_xml("<rad_value>7</rad_value>")
-        result = parse_radical(elem)
+        result = parse_radical(elem, order_index=0)
         assert result.value == 7
         assert result.rad_type == None
+        assert result.order_index == 0
 
 
 # ============================================================================
@@ -79,17 +81,19 @@ class TestParseCodepointElement:
 class TestParseReadingElement:
     def test_parses_reading(self):
         elem = extract_xml('<reading r_type="pinyin">ya4</reading>')
-        result = parse_reading(elem)
+        result = parse_reading(elem, order_index=0)
         assert isinstance(result, Reading)
         assert result.value == "ya4"
         assert result.r_type == "pinyin"
+        assert result.order_index == 0
 
     def test_handles_missing_r_type(self):
         elem = extract_xml("<reading>ya4</reading>")
-        result = parse_reading(elem)
+        result = parse_reading(elem, order_index=0)
         assert isinstance(result, Reading)
         assert result.value == "ya4"
         assert result.r_type == None
+        assert result.order_index == 0
 
 
 # ============================================================================
@@ -100,17 +104,19 @@ class TestParseReadingElement:
 class TestParseMeaningElement:
     def test_parses_meaning(self):
         elem = extract_xml('<meaning m_lang="fr">Asie</meaning>')
-        result = parse_meaning(elem)
+        result = parse_meaning(elem, order_index=0)
         assert isinstance(result, Meaning)
         assert result.value == "Asie"
-        assert result.src_lang == "fr"
+        assert result.m_lang == "fr"
+        assert result.order_index == 0
 
-    def test_handles_missing_src_lang(self):
+    def test_handles_missing_m_lang(self):
         elem = extract_xml("<meaning>ya4</meaning>")
-        result = parse_meaning(elem)
+        result = parse_meaning(elem, order_index=0)
         assert isinstance(result, Meaning)
         assert result.value == "ya4"
-        assert result.src_lang == "en"
+        assert result.m_lang == "en"
+        assert result.order_index == 0
 
 
 # ============================================================================
@@ -121,17 +127,19 @@ class TestParseMeaningElement:
 class TestParseVariantElement:
     def test_parses_variant(self):
         elem = extract_xml('<variant var_type="jis208">1-48-19</variant>')
-        result = parse_variant(elem)
+        result = parse_variant(elem, order_index=0)
         assert isinstance(result, Variant)
         assert result.value == "1-48-19"
         assert result.var_type == "jis208"
+        assert result.order_index == 0
 
     def test_handles_missing_var_type(self):
         elem = extract_xml("<variant>1-48-19</variant>")
-        result = parse_variant(elem)
+        result = parse_variant(elem, order_index=0)
         assert isinstance(result, Variant)
         assert result.value == "1-48-19"
         assert result.var_type == None
+        assert result.order_index == 0
 
 
 # ============================================================================
@@ -147,7 +155,7 @@ class TestParseDictionaryRefElement:
         assert result.ref_index == "939"
         assert result.ref_src == "nelson_c"
 
-    def test_handles_missing_src_lang(self):
+    def test_handles_missing_ref_src(self):
         elem = extract_xml("<dic_ref>939</dic_ref>")
         result = parse_dictionaryref(elem)
         assert isinstance(result, DictionaryReference)
@@ -179,7 +187,7 @@ class TestParseQueryCodeElement:
         result = parse_querycode(elem)
         assert isinstance(result, QueryCode)
         assert result.code == "2-10-12"
-        assert result.q_type == "skip"
+        assert result.qc_type == "skip"
         assert result.skip_misclass == "stroke_diff"
 
     def test_parses_missing_qc_type(self):
@@ -187,7 +195,7 @@ class TestParseQueryCodeElement:
         result = parse_querycode(elem)
         assert isinstance(result, QueryCode)
         assert result.code == "2-10-12"
-        assert result.q_type == None
+        assert result.qc_type == None
         assert result.skip_misclass == "stroke_diff"
 
     def test_parses_missing_skip_misclass(self):
@@ -195,76 +203,87 @@ class TestParseQueryCodeElement:
         result = parse_querycode(elem)
         assert isinstance(result, QueryCode)
         assert result.code == "2-10-12"
-        assert result.q_type == "skip"
+        assert result.qc_type == "skip"
         assert result.skip_misclass == None
 
 
 # ============================================================================
-# Tests for parse_rmgroup
+# Tests for parse_misc
 # ============================================================================
 
 
-class TestParseRMGroupElement:
-    def test_parses_rmgroup(self):
-        elem = extract_xml(
-            """
-        <rmgroup>
-            <reading r_type="ja_on">キョウ</reading>
-            <meaning>contest</meaning>
-            <meaning>race</meaning>
-        </rmgroup>
-        """
-        )
-        result = parse_rmgroup(elem)
-        assert isinstance(result, RMGroup)
-        assert len(result.readings) == 1
-        assert len(result.meanings) == 2
-        assert result.readings[0].value == "キョウ"
-        assert result.readings[0].r_type == "ja_on"
-        assert result.meanings[0].value == "contest"
-        assert result.meanings[1].value == "race"
+class TestParseMiscElement:
+    def test_parses_undefined_values(self):
+        elem = extract_xml("<misc></misc>")
+        result = parse_misc(elem)
+        assert result.grade == None
+        assert result.freq == None
+        assert result.jlpt == None
+        assert isinstance(result.rad_names, list)
+        assert isinstance(result.stroke_counts, list)
+        assert isinstance(result.variants, list)
+        assert len(result.rad_names) == 0
+        assert len(result.stroke_counts) == 0
+        assert len(result.variants) == 0
 
-    def test_handles_element_order(self):
-        elem = extract_xml(
-            """
-        <rmgroup>
-            <reading r_type="ja_on">ア</reading>
-            <reading r_type="ja_kun">つ.ぐ</reading>
-            <meaning>Asia</meaning>
-            <meaning>rank next</meaning>
-            <meaning>come after</meaning>
-        </rmgroup>
-        """
-        )
-        result = parse_rmgroup(elem)
-        assert isinstance(result, RMGroup)
-        assert result.readings[0].value == "ア"
-        assert result.readings[1].value == "つ.ぐ"
-        assert result.readings[0].order_index == 0
-        assert result.readings[1].order_index == 1
-        assert result.meanings[0].value == "Asia"
-        assert result.meanings[1].value == "rank next"
-        assert result.meanings[1].value == "come after"
-        assert result.meanings[0].order_index == 1
-        assert result.meanings[1].order_index == 2
-        assert result.meanings[1].order_index == 3
+    def test_parses_grade(self):
+        elem = extract_xml("<misc><grade>9</grade></misc>")
+        result = parse_misc(elem)
+        assert result.grade == 9
 
-    def test_handles_skip_empty_element(self):
+    def test_parses_jlpt(self):
+        elem = extract_xml("<misc><jlpt>2</jlpt></misc>")
+        result = parse_misc(elem)
+        assert result.jlpt == 2
+
+    def test_parses_freq(self):
+        elem = extract_xml("<misc><freq>2000</freq></misc>")
+        result = parse_misc(elem)
+        assert result.freq == 2000
+
+    def test_parses_multiple_stroke_count(self):
         elem = extract_xml(
             """
-        <rmgroup>
-            <reading>ア</reading>
-            <reading></reading>
-            <reading>つ.ぐ</reading>
-            <meaning>Asia</meaning>
-            <meaning></meaning>
-        </rmgroup>
-        """
+            <misc>
+                <stroke_count>13</stroke_count>
+                <stroke_count>14</stroke_count>
+            </misc>
+            """
         )
-        result = parse_rmgroup(elem)
-        assert isinstance(result, RMGroup)
-        assert len(result.readings) == 2
-        assert len(result.meanings) == 1
+        result = parse_misc(elem)
+        assert len(result.stroke_counts) == 2
+        assert result.stroke_counts[0] == 13
+        assert result.stroke_counts[1] == 14
+
+    def test_parses_multiple_rad_name(self):
+        elem = extract_xml(
+            """
+            <misc>
+                <rad_name>のぎ</rad_name>
+                <rad_name>のぎへん</rad_name>
+            </misc>
+            """
+        )
+        result = parse_misc(elem)
+        assert len(result.rad_names) == 2
+        assert result.rad_names[0] == "のぎ"
+        assert result.rad_names[1] == "のぎへん"
+
+    def test_parses_multiple_variants(self):
+        elem = extract_xml(
+            """
+            <misc>
+                <variant var_type="jis208">1-65-33</variant>
+                <variant var_type="deroo">1275</variant>
+            </misc>
+            """
+        )
+        result = parse_misc(elem)
+        assert len(result.variants) == 2
+        assert result.variants[0].value == "1-65-33"
+        assert result.variants[0].var_type == "jis208"
+        assert result.variants[1].value == "1275"
+        assert result.variants[1].var_type == "deroo"
 
 
 # ============================================================================
@@ -298,13 +317,14 @@ class TestParseCharacter:
                     <rad_value rad_type="classical">32</rad_value>
                     <rad_value rad_type="nelson_c">27</rad_value>
                 </radical>
-            </character
+                <misc></misc>
+            </character>
             """
         )
-        result = parse_entry(elem)
+        result = parse_character(elem)
         assert len(result.radicals) == 2
-        assert result.radicals[0].value == "32"
-        assert result.radicals[1].value == "27"
+        assert result.radicals[0].value == 32
+        assert result.radicals[1].value == 27
 
     def test_parses_multiple_codepoints(self):
         elem = extract_xml(
@@ -315,41 +335,11 @@ class TestParseCharacter:
                     <cp_value cp_type="ucs">5727</cp_value>
                     <cp_value cp_type="jis208">1-16-21</cp_value>
                 </codepoint>
-            </character
-        """
+            </character>
+            """
         )
-        result = parse_entry(elem)
+        result = parse_character(elem)
         assert len(result.codepoints) == 2
-
-    def test_parses_multiple_stroke_count(self):
-        elem = extract_xml(
-            """
-            <character>
-                <literal>圧</literal>
-                <misc>
-                    <stroke_count>13</stroke_count>
-                    <stroke_count>14</stroke_count>
-                </misc>
-            </character
-        """
-        )
-        result = parse_entry(elem)
-        assert len(result.stroke_counts) == 2
-
-    def test_parses_multiple_rad_name(self):
-        elem = extract_xml(
-            """
-            <character>
-                <literal>圧</literal>
-                <misc>
-                    <rad_name>のぎ</rad_name>
-                    <rad_name>のぎへん</rad_name>
-                </misc>
-            </character
-        """
-        )
-        result = parse_entry(elem)
-        assert len(result.rad_names) == 2
 
     def test_parses_multiple_dic_name(self):
         elem = extract_xml(
@@ -364,11 +354,11 @@ class TestParseCharacter:
                     <dic_ref dr_type="oneill_names">220</dic_ref>
                     <dic_ref dr_type="moro" m_vol="8" m_page="0522">24906</dic_ref>
                 </dic_number>
-            </character
-        """
+            </character>
+            """
         )
-        result = parse_entry(elem)
-        assert len(result.dic_nums) == 6
+        result = parse_character(elem)
+        assert len(result.dic_num) == 6
 
     def test_parses_multiple_query_code(self):
         elem = extract_xml(
@@ -381,26 +371,11 @@ class TestParseCharacter:
                     <q_code qc_type="four_corner">2090.4</q_code>
                     <q_code qc_type="skip" skip_misclass="posn">2-1-4</q_code>
                 </query_code>
-            </character
-        """
-        )
-        result = parse_entry(elem)
-        assert len(result.query_code) == 4
-
-    def test_parses_multiple_variants(self):
-        elem = extract_xml(
+            </character>
             """
-            <character>
-                <literal>圧</literal>
-                <misc>
-                    <variant var_type="jis208">1-65-33</variant>
-                    <variant var_type="deroo">1275</variant>
-                </misc>
-            </character
-        """
         )
-        result = parse_entry(elem)
-        assert len(result.variants) == 2
+        result = parse_character(elem)
+        assert len(result.query_codes) == 4
 
     def test_parses_complete_character_element(self):
         elem = extract_xml(
@@ -446,32 +421,20 @@ class TestParseCharacter:
                         <meaning m_lang="es">correr</meaning>
                         <meaning m_lang="pt">corrida</meaning>
                     </rmgroup>
-                <nanori>や</nanori>
-                <nanori>つぎ</nanori>
-                <nanori>つぐ</nanori>
+                    <nanori>や</nanori>
+                    <nanori>つぎ</nanori>
+                    <nanori>つぐ</nanori>
                 </reading_meaning>
             </character>
-        """
+            """
         )
         result = parse_character(elem)
 
         assert result.literal == "走"
-        assert result.jlpt == 3
-        assert result.freq == 626
-        assert result.grade == 2
 
-        # Stroke Counts
-        assert len(result.stroke_counts) == 3
-        assert result.stroke_counts[0] == 6
-        assert result.stroke_counts[1] == 5
-        assert result.stroke_counts[2] == 7
-
-        # rad_names
-        assert len(result.rad_names) == 4
-        assert result.stroke_counts[0] == "まきがまえ"
-        assert result.stroke_counts[1] == "えながまえ"
-        assert result.stroke_counts[2] == "どうがまえ"
-        assert result.stroke_counts[3] == "けいがまえ"
+        assert result.misc.jlpt == 3
+        assert result.misc.freq == 626
+        assert result.misc.grade == 2
 
         # Codepoints
         assert len(result.codepoints) == 2
@@ -482,67 +445,82 @@ class TestParseCharacter:
 
         # Radicals
         assert len(result.radicals) == 2
-        assert result.radicals[0].value == "156"
+        assert result.radicals[0].value == 156
         assert result.radicals[0].rad_type == "classical"
         assert result.radicals[0].order_index == 0
-        assert result.radicals[1].value == "138"
+        assert result.radicals[1].value == 138
         assert result.radicals[1].rad_type == "nelson_c"
         assert result.radicals[1].order_index == 1
 
         # Dictionary Refs
-        assert len(result.dic_nums) == 2
-        assert result.dic_nums[0].ref_index == "4539"
-        assert result.dic_nums[0].ref_src == "nelson_c"
-        assert result.dic_nums[0].moro_page == None
-        assert result.dic_nums[0].moro_vol == None
-        assert result.dic_nums[1].ref_index == "272"
-        assert result.dic_nums[1].ref_src == "moro"
-        assert result.dic_nums[1].moro_page == "0525"
-        assert result.dic_nums[1].moro_vol == "1"
+        assert len(result.dic_num) == 2
+        assert result.dic_num[0].ref_index == "4539"
+        assert result.dic_num[0].ref_src == "nelson_c"
+        assert result.dic_num[0].moro_page == None
+        assert result.dic_num[0].moro_vol == None
+        assert result.dic_num[1].ref_index == "272"
+        assert result.dic_num[1].ref_src == "moro"
+        assert result.dic_num[1].moro_page == "0525"
+        assert result.dic_num[1].moro_vol == "1"
 
         # Query Codes
-        assert len(result.radicals) == 2
+        assert len(result.query_codes) == 2
         assert result.query_codes[0].code == "4-2-4"
-        assert result.query_codes[0].q_type == "skip"
+        assert result.query_codes[0].qc_type == "skip"
         assert result.query_codes[0].skip_misclass == "posn"
         assert result.query_codes[1].code == "1470"
-        assert result.query_codes[1].q_type == "deroo"
+        assert result.query_codes[1].qc_type == "deroo"
         assert result.query_codes[1].skip_misclass == None
 
-        # Variants
-        assert len(result.variants) == 2
-        assert result.variants[0].value == "1-76-30"
-        assert result.variants[0].var_type == "jis208"
-        assert result.variants[0].order_index == 0
-        assert result.variants[0].value == "1-43-07"
-        assert result.variants[0].var_type == "jis212"
-        assert result.variants[0].order_index == 1
+        # Misc>Stroke Counts
+        assert len(result.misc.stroke_counts) == 3
+        assert result.misc.stroke_counts[0] == 6
+        assert result.misc.stroke_counts[1] == 5
+        assert result.misc.stroke_counts[2] == 7
 
-        # Reading Meanings
-        assert len(result.reading_meanings[0]) == 1
-        assert len(result.reading_meanings[0].readings) == 3
-        assert result.reading_meanings[0].readings[0].value == "Tẩu"
-        assert result.reading_meanings[0].readings[0].r_type == "vietnam"
-        assert result.reading_meanings[0].readings[0].order_index == 0
-        assert result.reading_meanings[0].readings[0].value == "ソウ"
-        assert result.reading_meanings[0].readings[0].r_type == "ja_on"
-        assert result.reading_meanings[0].readings[0].order_index == 1
-        assert result.reading_meanings[0].readings[0].value == "はし.る"
-        assert result.reading_meanings[0].readings[0].r_type == "ja_kun"
-        assert result.reading_meanings[0].readings[0].order_index == 2
-        assert len(result.reading_meanings[0].meanings) == 3
-        assert result.reading_meanings[0].meanings[0].value == "run"
-        assert result.reading_meanings[0].meanings[0].src_lang == "eng"
-        assert result.reading_meanings[0].meanings[0].order_index == 0
-        assert result.reading_meanings[0].meanings[1].value == "correr"
-        assert result.reading_meanings[0].meanings[1].src_lang == "es"
-        assert result.reading_meanings[0].meanings[1].order_index == 1
-        assert result.reading_meanings[0].meanings[2].value == "corrida"
-        assert result.reading_meanings[0].meanings[2].src_lang == "pt"
-        assert result.reading_meanings[0].meanings[2].order_index == 2
+        # Misc>rad_names
+        assert len(result.misc.rad_names) == 4
+        assert result.misc.rad_names[0] == "まきがまえ"
+        assert result.misc.rad_names[1] == "えながまえ"
+        assert result.misc.rad_names[2] == "どうがまえ"
+        assert result.misc.rad_names[3] == "けいがまえ"
 
-        # Nanori
-        assert len(result.nanori) == 3
-        assert result.nanori[0] == "や"
-        assert result.nanori[1] == "つぎ"
-        assert result.nanori[2] == "つぐ"
+        # Misc>Variants
+        assert len(result.misc.variants) == 2
+        assert result.misc.variants[0].value == "1-76-30"
+        assert result.misc.variants[0].var_type == "jis208"
+        assert result.misc.variants[0].order_index == 0
+        assert result.misc.variants[1].value == "1-43-07"
+        assert result.misc.variants[1].var_type == "jis212"
+        assert result.misc.variants[1].order_index == 1
+
+        # Reading_Meanings>Nanori
+        assert len(result.reading_meaning.nanori) == 3
+        assert result.reading_meaning.nanori[0] == "や"
+        assert result.reading_meaning.nanori[1] == "つぎ"
+        assert result.reading_meaning.nanori[2] == "つぐ"
+
+        # Reading_Meanings>RMGroup>Readings
+        rmgroup = result.reading_meaning.rmgroup
+        assert len(rmgroup.readings) == 3
+        assert rmgroup.readings[0].value == "Tẩu"
+        assert rmgroup.readings[0].r_type == "vietnam"
+        assert rmgroup.readings[0].order_index == 0
+        assert rmgroup.readings[1].value == "ソウ"
+        assert rmgroup.readings[1].r_type == "ja_on"
+        assert rmgroup.readings[1].order_index == 1
+        assert rmgroup.readings[2].value == "はし.る"
+        assert rmgroup.readings[2].r_type == "ja_kun"
+        assert rmgroup.readings[2].order_index == 2
+
+        # Reading_Meanings>RMGroup>Meanings
+        assert len(rmgroup.meanings) == 3
+        assert rmgroup.meanings[0].value == "run"
+        assert rmgroup.meanings[0].m_lang == "en"
+        assert rmgroup.meanings[0].order_index == 0
+        assert rmgroup.meanings[1].value == "correr"
+        assert rmgroup.meanings[1].m_lang == "es"
+        assert rmgroup.meanings[1].order_index == 1
+        assert rmgroup.meanings[2].value == "corrida"
+        assert rmgroup.meanings[2].m_lang == "pt"
+        assert rmgroup.meanings[2].order_index == 2
