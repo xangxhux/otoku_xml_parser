@@ -7,7 +7,7 @@ They verify that XML elements are correctly transformed into Python objects.
 
 import pytest
 from test_utils import extract_xml
-from model.kanjidic_entity import (
+from src.otoku_xml_parser.model.kanjidic_entity import (
     Radical,
     Codepoint,
     Variant,
@@ -18,7 +18,7 @@ from model.kanjidic_entity import (
     RMGroup,
     Character,
 )
-from parser.kanjidic_parser import (
+from src.otoku_xml_parser.parser.kanjidic_parser import (
     parse_radical,
     parse_codepoint,
     parse_variant,
