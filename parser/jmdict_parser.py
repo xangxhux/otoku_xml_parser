@@ -5,6 +5,7 @@ Streams through the JMdict XML file, parsing each entry
 and inserting it into the database.
 """
 
+import regex as re
 from utils.number import to_int
 from model.jmdict_entity import (
     Entry,
@@ -20,9 +21,68 @@ from parser.helpers import (
     get_texts,
     get_entity_texts,
     clean_text,
-    detect_reb,
-    detect_keb,
 )
+
+
+def detect_reb(text: str) -> bool:
+    """
+    Check if text is valid as a JMdict reading form (reb) element.
+
+    The reb element is more restrictive than the keb element.
+    It can only contain kana and kana-related characters.
+
+    The reb element can only contain:
+      - Hiragana
+      - Katakana
+      - ー (prolonged sound mark)
+      - ヽ ヾ ゝ ゞ (kana iteration marks)
+      - ・ (middle dot)
+      - 〜 (wave dash)
+
+    From JMDict(2026-09-03,ln.521)
+        This element content is restricted to kana and related
+        characters such as chouon and kurikaeshi. Kana usage will be
+        consistent between the keb and reb elements; e.g. if the keb
+        contains katakana, so too will the reb.
+    """
+    # \u30FC        ー prolonged sound mark
+    # \u30FD        ヽ katakana iteration mark
+    # \u30FE        ヾ katakana voiced iteration mark
+    # \u309D        ゝ hiragana iteration mark
+    # \u309E        ゞ hiragana voiced iteration mark
+    # \u30FB        ・ middle dot
+    # \u301C        〜 wave dash
+    # Characters allowed in a JMdict <reb> element
+    _REB_PATTERN = re.compile(
+        r"^[\p{Hira}\p{Kana}\u30FC\u30FD\u30FE\u309D\u309E\u30FB\u301C]+$"
+    )
+    if not text:
+        return False
+    return bool(_REB_PATTERN.fullmatch(clean_text(text)))
+
+
+def detect_keb(text: str) -> bool:
+    """
+    Check if text is valid as a JMdict kanji form (keb) element.
+
+    A valid keb must contain at least one non-kana character,
+    but may also contain kana, iteration marks (々, 〃), numbers,
+    and in rare cases, letters from other alphabets.
+
+    From JMDict(2026-09-03,ln.521)
+        This element will contain a word or short phrase in Japanese
+        which is written using at least one non-kana character (usually kanji,
+        but can be other characters). The valid characters are
+        kanji, kana, related characters such as chouon and kurikaeshi, and
+        in exceptional cases, letters from other alphabets.
+    """
+    if not text:
+        return False
+    # If it's a valid reading, it can't be a keb
+    if detect_reb(clean_text(text)):
+        return False
+    # Otherwise, it's most likely a keb
+    return True
 
 
 def parse_kanji_element(k_ele) -> KanjiElement:
