@@ -5,7 +5,7 @@ Common test helper functions
 
 import lxml.etree as ET
 
-from src.parser.helpers import (
+from src.otoku_xml_parser.parser.helpers import (
     clean_text,
     get_text,
     get_texts,

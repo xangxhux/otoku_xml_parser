@@ -6,8 +6,8 @@ and inserting it into the database.
 """
 
 import regex as re
-from utils.number import to_int
-from model.jmdict_entity import (
+from ..utils.number import to_int
+from ..model.jmdict_entity import (
     Entry,
     KanjiElement,
     ReadingElement,
@@ -16,7 +16,7 @@ from model.jmdict_entity import (
     SenseLink,
     Sense,
 )
-from parser.helpers import (
+from ..parser.helpers import (
     get_text,
     get_texts,
     get_entity_texts,

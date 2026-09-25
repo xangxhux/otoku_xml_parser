@@ -6,8 +6,8 @@ and inserting it into the database.
 """
 
 import lxml.etree as ElementTree
-from utils.number import to_int
-from model.kanjidic_entity import (
+from ..utils.number import to_int
+from ..model.kanjidic_entity import (
     Character,
     Codepoint,
     Radical,
@@ -20,7 +20,7 @@ from model.kanjidic_entity import (
     Reading,
     Meaning,
 )
-from parser.helpers import (
+from ..parser.helpers import (
     get_text,
     get_texts,
     get_entity_texts,

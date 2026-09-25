@@ -7,7 +7,7 @@ They verify that XML elements are correctly transformed into Python objects.
 
 import pytest
 from test_utils import extract_xml
-from src.model.jmdict_entity import (
+from src.otoku_xml_parser.model.jmdict_entity import (
     Entry,
     KanjiElement,
     ReadingElement,
@@ -16,7 +16,7 @@ from src.model.jmdict_entity import (
     SenseLink,
     Sense,
 )
-from src.parser.jmdict_parser import (
+from src.otoku_xml_parser.parser.jmdict_parser import (
     detect_keb,
     detect_reb,
     parse_kanji_element,
